@@ -37,6 +37,15 @@ public class Common {
 		return out.toString();
 	}
 
+	public static <T> Iterable<T> iterable(final Stream<T> stream) {
+		return new Iterable<T>() {
+			@Override
+			public Iterator<T> iterator() {
+				return stream.iterator();
+			}
+		};
+	}
+
 	public static <T> T uncheck(final Thrower1<T> code) {
 		try {
 			return code.get();
