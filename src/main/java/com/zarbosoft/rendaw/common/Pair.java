@@ -28,4 +28,9 @@ public class Pair<T1, T2> {
 	public <T> T map(final MapOperator<T1, T2, T> operator) {
 		return operator.apply(first, second);
 	}
+
+	@Override
+	public String toString() {
+		return String.format("Pair[%s, %s]", first, second);
+	}
 }

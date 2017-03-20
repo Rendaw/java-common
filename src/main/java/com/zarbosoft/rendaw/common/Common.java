@@ -2,12 +2,10 @@ package com.zarbosoft.rendaw.common;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -86,6 +84,41 @@ public class Common {
 		return values[values.length - 1];
 	}
 
+	public static <A, B> Stream<Pair<A, B>> zip(
+			final Stream<? extends A> a, final Stream<? extends B> b
+	) {
+		final Spliterator<? extends A> aSpliterator = Objects.requireNonNull(a).spliterator();
+		final Spliterator<? extends B> bSpliterator = Objects.requireNonNull(b).spliterator();
+
+		// Zipping looses DISTINCT and SORTED characteristics
+		final int characteristics = aSpliterator.characteristics() &
+				bSpliterator.characteristics() &
+				~(Spliterator.DISTINCT | Spliterator.SORTED);
+
+		final long zipSize = ((characteristics & Spliterator.SIZED) != 0) ?
+				Math.min(aSpliterator.getExactSizeIfKnown(), bSpliterator.getExactSizeIfKnown()) :
+				-1;
+
+		final Iterator<A> aIterator = Spliterators.iterator(aSpliterator);
+		final Iterator<B> bIterator = Spliterators.iterator(bSpliterator);
+		final Iterator<Pair<A, B>> cIterator = new Iterator<Pair<A, B>>() {
+			@Override
+			public boolean hasNext() {
+				return aIterator.hasNext() && bIterator.hasNext();
+			}
+
+			@Override
+			public Pair<A, B> next() {
+				return new Pair<>(aIterator.next(), bIterator.next());
+			}
+		};
+
+		final Spliterator<Pair<A, B>> split = Spliterators.spliterator(cIterator, zipSize, characteristics);
+		return (a.isParallel() || b.isParallel()) ?
+				StreamSupport.stream(split, true) :
+				StreamSupport.stream(split, false);
+	}
+
 	public static <T> Stream<T> stream(final Iterator<T> iterator) {
 		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
 	}
@@ -97,6 +130,79 @@ public class Common {
 	public static <T> Stream<Pair<Integer, T>> enumerate(final Stream<T> stream, final int start) {
 		final Mutable<Integer> count = new Mutable<>(start);
 		return stream.map(e -> new Pair<>(count.value++, e));
+	}
+
+	public static <T> Stream<Pair<Boolean, T>> streamFinality(final Iterator<T> data) {
+		return stream(new Iterator<Pair<Boolean, T>>() {
+			@Override
+			public boolean hasNext() {
+				return data.hasNext();
+			}
+
+			@Override
+			public Pair<Boolean, T> next() {
+				final T temp = data.next();
+				return new Pair<>(!data.hasNext(), temp);
+			}
+		});
+	}
+
+	public static <T> Stream<T> concatNull(final Stream<T> stream) {
+		return Stream.concat(stream, Stream.of((T[]) new Object[] {null}));
+	}
+
+	public static class InputStreamIterator implements Iterator<byte[]> {
+		private final InputStream source;
+		private byte[] bytes = null;
+		private int length = -1;
+
+		public InputStreamIterator(final InputStream source) {
+			this.source = source;
+		}
+
+		@Override
+		public boolean hasNext() {
+			if (bytes == null)
+				read();
+			return length != -1;
+		}
+
+		@Override
+		public byte[] next() {
+			if (bytes == null)
+				read();
+			if (length == -1)
+				throw new NoSuchElementException();
+			final byte[] out = Arrays.copyOfRange(bytes, 0, length);
+			read();
+			return out;
+		}
+
+		private void read() {
+			if (bytes == null)
+				bytes = new byte[1024];
+			length = uncheck(() -> source.read(bytes));
+		}
+	}
+
+	public static Stream<byte[]> stream(final InputStream source) {
+		return stream(new InputStreamIterator(source));
+	}
+
+	public static <T> Stream<T> drain(final Deque<T> queue) {
+		class DrainIterator implements Iterator<T> {
+
+			@Override
+			public boolean hasNext() {
+				return !queue.isEmpty();
+			}
+
+			@Override
+			public T next() {
+				return queue.pollFirst();
+			}
+		}
+		return stream(new DrainIterator());
 	}
 
 	public static class Enumerator<T> implements Function<T, Pair<Integer, T>> {
@@ -150,4 +256,5 @@ public class Common {
 		public Mutable() {
 		}
 	}
+
 }
