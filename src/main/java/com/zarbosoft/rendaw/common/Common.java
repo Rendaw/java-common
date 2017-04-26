@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -36,10 +37,19 @@ public class Common {
 	}
 
 	public static <T> Iterable<T> iterable(final Stream<T> stream) {
-		return new Iterable<T>() {
+		return new Iterable<>() {
 			@Override
 			public Iterator<T> iterator() {
 				return stream.iterator();
+			}
+		};
+	}
+
+	public static <T> Iterable<T> iterable(final Iterator<T> iterator) {
+		return new Iterable<>() {
+			@Override
+			public Iterator<T> iterator() {
+				return iterator;
 			}
 		};
 	}
@@ -101,7 +111,7 @@ public class Common {
 
 		final Iterator<A> aIterator = Spliterators.iterator(aSpliterator);
 		final Iterator<B> bIterator = Spliterators.iterator(bSpliterator);
-		final Iterator<Pair<A, B>> cIterator = new Iterator<Pair<A, B>>() {
+		final Iterator<Pair<A, B>> cIterator = new Iterator<>() {
 			@Override
 			public boolean hasNext() {
 				return aIterator.hasNext() && bIterator.hasNext();
@@ -117,6 +127,10 @@ public class Common {
 		return (a.isParallel() || b.isParallel()) ?
 				StreamSupport.stream(split, true) :
 				StreamSupport.stream(split, false);
+	}
+
+	public static <T> Stream<T> flatStream(final Stream<T>... values) {
+		return Stream.of(values).flatMap(v -> v);
 	}
 
 	public static <T> Stream<T> stream(final Iterator<T> iterator) {
@@ -257,4 +271,25 @@ public class Common {
 		}
 	}
 
+	public static class UserData {
+		private Object value;
+
+		public UserData() {
+			value = null;
+		}
+
+		public UserData(final Object value) {
+			this.value = value;
+		}
+
+		public <T> T get() {
+			return (T) value;
+		}
+
+		public <T> T get(final Supplier<T> supplier) {
+			if (value == null)
+				value = supplier.get();
+			return get();
+		}
+	}
 }
