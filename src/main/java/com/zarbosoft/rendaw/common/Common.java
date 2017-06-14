@@ -54,6 +54,10 @@ public class Common {
 		};
 	}
 
+	public static <T> boolean isOrdered(final Comparator<T> comparator, final T a, final T b) {
+		return comparator.compare(a, b) <= 0;
+	}
+
 	public static <T> T uncheck(final Thrower1<T> code) {
 		try {
 			return code.get();
@@ -84,6 +88,12 @@ public class Common {
 		} catch (final Throwable e) {
 			throw new UncheckedException(e);
 		}
+	}
+
+	public static <T> Optional<T> lastOpt(final List<T> values) {
+		if (values.isEmpty())
+			return Optional.empty();
+		return Optional.of(last(values));
 	}
 
 	public static <T> T last(final List<T> values) {
