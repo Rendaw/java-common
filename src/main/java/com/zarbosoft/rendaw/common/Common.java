@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -13,6 +15,10 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class Common {
+	public static Path workingDir() {
+		return Paths.get(System.getProperty("user.dir"));
+	}
+
 	public static String byteFormat(final byte b) {
 		if (b == (byte) '\n')
 			return "\\n";
