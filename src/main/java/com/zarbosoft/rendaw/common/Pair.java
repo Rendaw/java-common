@@ -1,6 +1,14 @@
 package com.zarbosoft.rendaw.common;
 
-public class Pair<T1, T2> {
+import java.util.Comparator;
+
+public class Pair<T1, T2> implements Comparable<Pair> {
+	public final static Comparator<Pair<? extends Comparable, ? extends Comparable>> comparator =
+			new ChainComparator<Pair<? extends Comparable, ? extends Comparable>>()
+					.lesserFirst(a -> a.first)
+					.lesserFirst(a -> a.second)
+					.build();
+
 	@FunctionalInterface
 	public interface Consumer<T1, T2> {
 		void accept(T1 a, T2 b);
@@ -33,4 +41,22 @@ public class Pair<T1, T2> {
 	public String toString() {
 		return String.format("Pair[%s, %s]", first, second);
 	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (!(obj instanceof Pair))
+			return false;
+		final Pair obj1 = (Pair) obj;
+		if (first == null && obj1.first != null)
+			return false;
+		if (second == null && obj1.second != null)
+			return false;
+		return first.equals(obj1.first) && second.equals(obj1.second);
+	}
+
+	@Override
+	public int compareTo(final Pair o) {
+		return comparator.compare((Pair<? extends Comparable, ? extends Comparable>) this, o);
+	}
+
 }
