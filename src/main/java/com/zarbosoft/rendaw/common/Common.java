@@ -43,7 +43,7 @@ public class Common {
 	}
 
 	public static <T> Iterable<T> iterable(final Stream<T> stream) {
-		return new Iterable<>() {
+		return new Iterable<T>() {
 			@Override
 			public Iterator<T> iterator() {
 				return stream.iterator();
@@ -52,7 +52,7 @@ public class Common {
 	}
 
 	public static <T> Iterable<T> iterable(final Iterator<T> iterator) {
-		return new Iterable<>() {
+		return new Iterable<T>() {
 			@Override
 			public Iterator<T> iterator() {
 				return iterator;
@@ -64,35 +64,42 @@ public class Common {
 		return comparator.compare(a, b) <= 0;
 	}
 
+	public static RuntimeException uncheckAll(final Throwable e) {
+		if (e instanceof Exception) {
+			return uncheck((Exception) e);
+		}
+		return new UncheckedException(e);
+	}
+
+	public static RuntimeException uncheck(final Exception e) {
+		if (e instanceof RuntimeException)
+			return (RuntimeException) e;
+		if (e instanceof NoSuchFileException)
+			return new UncheckedNoSuchFileException(e);
+		if (e instanceof FileNotFoundException)
+			return new UncheckedFileNotFoundException(e);
+		if (e instanceof IOException)
+			return new UncheckedIOException((IOException) e);
+		return new UncheckedException(e);
+	}
+
+	public static RuntimeException uncheck(final Error e) {
+		return new UncheckedException(e);
+	}
+
 	public static <T> T uncheck(final Thrower1<T> code) {
 		try {
 			return code.get();
-		} catch (final NoSuchFileException e) {
-			throw new UncheckedNoSuchFileException(e);
-		} catch (final FileNotFoundException e) {
-			throw new UncheckedFileNotFoundException(e);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		} catch (final RuntimeException e) {
-			throw e;
-		} catch (final Throwable e) {
-			throw new UncheckedException(e);
+		} catch (final Exception e) {
+			throw uncheck(e);
 		}
 	}
 
 	public static void uncheck(final Thrower2 code) {
 		try {
 			code.get();
-		} catch (final NoSuchFileException e) {
-			throw new UncheckedNoSuchFileException(e);
-		} catch (final FileNotFoundException e) {
-			throw new UncheckedFileNotFoundException(e);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		} catch (final RuntimeException e) {
-			throw e;
-		} catch (final Throwable e) {
-			throw new UncheckedException(e);
+		} catch (final Exception e) {
+			throw uncheck(e);
 		}
 	}
 
@@ -110,6 +117,15 @@ public class Common {
 		return values[values.length - 1];
 	}
 
+	/**
+	 * Shortest of two streams
+	 *
+	 * @param a
+	 * @param b
+	 * @param <A>
+	 * @param <B>
+	 * @return
+	 */
 	public static <A, B> Stream<Pair<A, B>> zip(
 			final Stream<? extends A> a, final Stream<? extends B> b
 	) {
@@ -127,7 +143,7 @@ public class Common {
 
 		final Iterator<A> aIterator = Spliterators.iterator(aSpliterator);
 		final Iterator<B> bIterator = Spliterators.iterator(bSpliterator);
-		final Iterator<Pair<A, B>> cIterator = new Iterator<>() {
+		final Iterator<Pair<A, B>> cIterator = new Iterator<Pair<A, B>>() {
 			@Override
 			public boolean hasNext() {
 				return aIterator.hasNext() && bIterator.hasNext();
@@ -236,7 +252,15 @@ public class Common {
 	}
 
 	public static class Enumerator<T> implements Function<T, Pair<Integer, T>> {
-		private int count = 0;
+		private int count;
+
+		public Enumerator() {
+			count = 0;
+		}
+
+		public Enumerator(final int count) {
+			this.count = count;
+		}
 
 		@Override
 		public Pair<Integer, T> apply(final T t) {
@@ -250,12 +274,12 @@ public class Common {
 
 	@FunctionalInterface
 	public interface Thrower1<T> {
-		T get() throws Throwable;
+		T get() throws Exception, Error;
 	}
 
 	@FunctionalInterface
 	public interface Thrower2 {
-		void get() throws Throwable;
+		void get() throws Exception, Error;
 	}
 
 	public static class UncheckedException extends RuntimeException {
