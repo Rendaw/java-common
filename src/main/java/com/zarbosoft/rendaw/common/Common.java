@@ -7,12 +7,15 @@ import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static java.time.ZoneOffset.UTC;
 
 public class Common {
 	public static Path workingDir() {
@@ -40,6 +43,22 @@ public class Common {
 		for (final byte b : bytes)
 			out.append(byteFormat(b));
 		return out.toString();
+	}
+
+	public static long stamp() {
+		return ZonedDateTime.now().toInstant().toEpochMilli();
+	}
+
+	public static long stamp(final LocalDate date) {
+		return date.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+	}
+
+	public static long stamp(final LocalDateTime time) {
+		return time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+	}
+
+	public static ZonedDateTime unstamp(final long stamp) {
+		return Instant.ofEpochMilli(stamp).atZone(UTC);
 	}
 
 	public static <T> Iterable<T> iterable(final Stream<T> stream) {
@@ -331,5 +350,10 @@ public class Common {
 				value = supplier.get();
 			return get();
 		}
+	}
+
+	@FunctionalInterface
+	public interface Consumer2<T> {
+		void accept(T t) throws Exception;
 	}
 }
