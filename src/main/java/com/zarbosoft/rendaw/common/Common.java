@@ -4,9 +4,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.time.*;
 import java.util.*;
 import java.util.function.Function;
@@ -57,6 +59,10 @@ public class Common {
 		return time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 	}
 
+	public static long stamp(final Duration duration) {
+		return duration.toMillis();
+	}
+
 	public static ZonedDateTime unstamp(final long stamp) {
 		return Instant.ofEpochMilli(stamp).atZone(UTC);
 	}
@@ -81,6 +87,10 @@ public class Common {
 
 	public static <T> boolean isOrdered(final Comparator<T> comparator, final T a, final T b) {
 		return comparator.compare(a, b) <= 0;
+	}
+
+	public static <T extends Comparable<T>> boolean isOrdered(final T a, final T b) {
+		return a.compareTo(b) <= 0;
 	}
 
 	public static RuntimeException uncheckAll(final Throwable e) {
@@ -355,5 +365,19 @@ public class Common {
 	@FunctionalInterface
 	public interface Consumer2<T> {
 		void accept(T t) throws Exception;
+	}
+
+	public static String shash1(final Object... source) {
+		final MessageDigest hash = uncheck(() -> MessageDigest.getInstance("SHA-1"));
+		for (final Object o : source)
+			hash.update(o.toString().getBytes(StandardCharsets.UTF_8));
+		return Base64.getEncoder().encodeToString(hash.digest());
+	}
+
+	public static String shash256(final Object... source) {
+		final MessageDigest hash = uncheck(() -> MessageDigest.getInstance("SHA-256"));
+		for (final Object o : source)
+			hash.update(o.toString().getBytes(StandardCharsets.UTF_8));
+		return Base64.getEncoder().encodeToString(hash.digest());
 	}
 }
