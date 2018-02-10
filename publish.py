@@ -21,6 +21,7 @@ pom_text = re.sub('xmlns="[^"]+"', '', pom_text)
 pom = xml.etree.ElementTree.fromstring(pom_text)
 version = pom.find('./version').text
 
+subprocess.check_call(['git', 'push'])
 subprocess.check_call(['git', 'tag', 'v' + version])
 subprocess.check_call(['git', 'push', '--tags'])
 
