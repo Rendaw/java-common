@@ -18,14 +18,12 @@ if not args.force and subprocess.call(['git', 'diff-index', '--quiet', 'HEAD']) 
 with open('pom.xml', 'r') as pom_source:
     pom_text = pom_source.read()
 pom_text = re.sub('xmlns="[^"]+"', '', pom_text)
-pom = xml.etree.ElementTree.parse('pom.xml').getroot()
-version = pom.find('//project/version').text
-print(version)
-1 / 0
+pom = xml.etree.ElementTree.fromstring(pom_text)
+version = pom.find('./version').text
 
 subprocess.check_call(['git', 'tag', 'v' + version])
 subprocess.check_call(['git', 'push', '--tags'])
 
 env = os.environ.copy()
 env['JAVA_HOME'] = '/usr/lib/jvm/java-8-jdk'
-subprocess.check_call(['mvn', 'clean', 'publish', '-P', 'release'], env=env)
+subprocess.check_call(['mvn', 'clean', 'deploy', '-P', 'release'], env=env)
