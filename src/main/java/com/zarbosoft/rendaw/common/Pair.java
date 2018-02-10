@@ -1,6 +1,7 @@
 package com.zarbosoft.rendaw.common;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 public class Pair<T1, T2> implements Comparable<Pair> {
 	public final static Comparator<Pair<? extends Comparable, ? extends Comparable>> comparator =
@@ -59,4 +60,8 @@ public class Pair<T1, T2> implements Comparable<Pair> {
 		return comparator.compare((Pair<? extends Comparable, ? extends Comparable>) this, o);
 	}
 
+	@Override
+	public int hashCode() {
+		return Objects.hash(first, second);
+	}
 }
